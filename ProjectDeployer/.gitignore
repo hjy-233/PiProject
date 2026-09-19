@@ -1,0 +1,29 @@
+# Swift
+.build/
+.swiftpm/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+coverage/
+
+# Editors and macOS
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ProjectDeployer runtime data
+artifacts/
+releases/
+project-deployer.sqlite*

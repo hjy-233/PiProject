@@ -1,0 +1,26 @@
+excluded:
+  - service/.build
+
+line_length:
+  warning: 120
+  error: 140
+  ignores_comments: true
+  ignores_urls: true
+
+type_body_length:
+  warning: 300
+  error: 400
+
+nesting:
+  type_level:
+    warning: 2
+    error: 3
+
+trailing_comma:
+  mandatory_comma: true
+
+identifier_name:
+  excluded:
+    - id
+
+reporter: xcode
