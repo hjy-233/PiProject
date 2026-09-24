@@ -52,4 +52,4 @@ ProjectDeployer/
 
 ## 当前状态
 
-Phase 1 的本地服务骨架已经完成：Swift 服务具备配置加载、健康检查、统一错误结构、Git 来源配置校验和 manifest v1 校验，并已通过 macOS build、lint 与测试。`linux/arm64` 构建和真实 Raspberry Pi 启动验证仍待完成；Flutter 管理台尚未生成。
+Phase 1 的服务骨架已经完成：Swift 服务具备配置加载、健康检查、统一错误结构、Git 来源配置校验和 manifest v1 校验，并已通过 macOS build、lint 与测试。在 Raspberry Pi OS Lite 64-bit（Debian 13、`aarch64`）上，Swift 6.4 release build、13 项测试、release 二进制启动、`/health` 与 Git 来源配置接口均已验证通过。Flutter 管理台尚未生成。

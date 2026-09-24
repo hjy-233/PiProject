@@ -18,7 +18,7 @@
 - [x] 实现 Git 来源配置模型和安全校验。
 - [x] 实现 manifest Codable 模型和完整校验。
 - [x] 建立 SwiftFormat、SwiftLint strict、测试和 macOS release build 流程。
-- [ ] 完成 `linux/arm64` release build 与启动验证。
+- [x] 完成 `linux/arm64` release build 与启动验证。
 
 完成条件：服务在 macOS 测试通过，并在 `linux/arm64` 环境启动成功。
 
