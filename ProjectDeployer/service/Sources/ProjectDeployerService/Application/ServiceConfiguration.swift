@@ -2,6 +2,12 @@ import Foundation
 import Logging
 
 struct ServiceConfiguration: Equatable, Sendable {
+    private struct RetentionConfiguration {
+        let releases: Int
+        let deployments: Int
+        let minimumFreeSpaceMiB: Int
+    }
+
     enum ConfigurationError: Error, Equatable, CustomStringConvertible {
         case emptyHost
         case invalidPort(String)
@@ -38,6 +44,7 @@ struct ServiceConfiguration: Equatable, Sendable {
     let releaseRetentionCount: Int
     let deploymentRetentionCount: Int
     let minimumFreeSpaceMiB: Int
+    let consoleRoot: String
 
     init(environment: [String: String] = ProcessInfo.processInfo.environment) throws {
         let host = environment["PROJECT_DEPLOYER_HOST"] ?? "127.0.0.1"
@@ -72,21 +79,8 @@ struct ServiceConfiguration: Equatable, Sendable {
             throw ConfigurationError.invalidPollSweep(pollSweepValue)
         }
 
-        let releaseRetentionCount = try Self.positiveInteger(
-            environment["PROJECT_DEPLOYER_RELEASE_RETENTION"] ?? "5",
-            variable: "PROJECT_DEPLOYER_RELEASE_RETENTION",
-            range: 2 ... 50,
-        )
-        let deploymentRetentionCount = try Self.positiveInteger(
-            environment["PROJECT_DEPLOYER_DEPLOYMENT_RETENTION"] ?? "100",
-            variable: "PROJECT_DEPLOYER_DEPLOYMENT_RETENTION",
-            range: 10 ... 10000,
-        )
-        let minimumFreeSpaceMiB = try Self.positiveInteger(
-            environment["PROJECT_DEPLOYER_MIN_FREE_SPACE_MIB"] ?? "512",
-            variable: "PROJECT_DEPLOYER_MIN_FREE_SPACE_MIB",
-            range: 128 ... 1_048_576,
-        )
+        let retention = try Self.retention(environment: environment)
+        let consoleRoot = try Self.consoleRoot(environment: environment, dataRoot: dataRoot)
 
         self.host = host
         self.port = port
@@ -95,9 +89,10 @@ struct ServiceConfiguration: Equatable, Sendable {
         self.gitExecutable = gitExecutable
         self.dockerExecutable = dockerExecutable
         self.pollSweepSeconds = pollSweepSeconds
-        self.releaseRetentionCount = releaseRetentionCount
-        self.deploymentRetentionCount = deploymentRetentionCount
-        self.minimumFreeSpaceMiB = minimumFreeSpaceMiB
+        releaseRetentionCount = retention.releases
+        deploymentRetentionCount = retention.deployments
+        minimumFreeSpaceMiB = retention.minimumFreeSpaceMiB
+        self.consoleRoot = consoleRoot
     }
 
     private static func logLevel(from value: String) -> Logger.Level? {
@@ -139,5 +134,42 @@ struct ServiceConfiguration: Equatable, Sendable {
             throw ConfigurationError.invalidRetention(variable: variable, value: value)
         }
         return result
+    }
+
+    private static func consoleRoot(
+        environment: [String: String],
+        dataRoot: String,
+    ) throws -> String {
+        let value = environment["PROJECT_DEPLOYER_CONSOLE_ROOT"] ?? URL(
+            fileURLWithPath: dataRoot,
+            isDirectory: true,
+        ).appendingPathComponent("console", isDirectory: true).path
+        try validateAbsolutePath(value, variable: "PROJECT_DEPLOYER_CONSOLE_ROOT")
+        return value
+    }
+
+    private static func retention(
+        environment: [String: String],
+    ) throws -> RetentionConfiguration {
+        let releases = try positiveInteger(
+            environment["PROJECT_DEPLOYER_RELEASE_RETENTION"] ?? "5",
+            variable: "PROJECT_DEPLOYER_RELEASE_RETENTION",
+            range: 2 ... 50,
+        )
+        let deployments = try positiveInteger(
+            environment["PROJECT_DEPLOYER_DEPLOYMENT_RETENTION"] ?? "100",
+            variable: "PROJECT_DEPLOYER_DEPLOYMENT_RETENTION",
+            range: 10 ... 10000,
+        )
+        let minimumFreeSpaceMiB = try positiveInteger(
+            environment["PROJECT_DEPLOYER_MIN_FREE_SPACE_MIB"] ?? "512",
+            variable: "PROJECT_DEPLOYER_MIN_FREE_SPACE_MIB",
+            range: 128 ... 1_048_576,
+        )
+        return RetentionConfiguration(
+            releases: releases,
+            deployments: deployments,
+            minimumFreeSpaceMiB: minimumFreeSpaceMiB,
+        )
     }
 }

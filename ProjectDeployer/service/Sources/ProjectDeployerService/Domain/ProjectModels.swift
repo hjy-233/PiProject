@@ -56,6 +56,24 @@ struct DeployProjectRequest: Codable, Sendable {
     let releaseId: String
 }
 
+struct InspectGitSourceRequest: Codable, Sendable {
+    let projectId: String
+    let source: GitSourceConfiguration
+}
+
+struct GitSourceInspectionResponse: ResponseCodable, Equatable, Sendable {
+    let branches: [String]
+    let commit: String
+    let manifestExists: Bool
+    let manifestValid: Bool
+    let manifest: DeploymentManifest?
+    let issues: [ValidationIssue]
+}
+
+struct GitCredentialListResponse: ResponseCodable, Equatable, Sendable {
+    let credentials: [String]
+}
+
 struct StoredProject: Codable, Equatable, Sendable {
     let id: String
     let name: String

@@ -1,0 +1,116 @@
+{
+  "@@locale": "zh",
+  "appTitle": "ProjectDeployer",
+  "overview": "总览",
+  "projects": "项目",
+  "refresh": "刷新",
+  "newProject": "新建项目",
+  "totalProjects": "项目总数",
+  "running": "运行中",
+  "stopped": "已停止",
+  "needsAttention": "需要处理",
+  "emptyProjects": "还没有项目",
+  "emptyProjectsHint": "创建第一个 Git 自动部署项目。",
+  "recentProjects": "项目状态",
+  "branch": "分支",
+  "lastUpdated": "最近更新",
+  "details": "详情",
+  "deployments": "部署记录",
+  "releases": "版本",
+  "logs": "日志",
+  "settings": "设置",
+  "sync": "立即同步",
+  "start": "启动",
+  "stop": "停止",
+  "restart": "重启",
+  "rollback": "回滚",
+  "deploy": "部署",
+  "edit": "编辑",
+  "delete": "删除",
+  "deleteProject": "删除项目",
+  "purgeVolumes": "同时删除 Docker volume（不可恢复）",
+  "cancel": "取消",
+  "confirm": "确认",
+  "save": "保存",
+  "projectId": "项目 ID",
+  "projectName": "项目名称",
+  "repositoryUrl": "Git 仓库 URL",
+  "credentialId": "SSH 凭据 ID（可选）",
+  "pollSeconds": "轮询间隔（秒）",
+  "automatic": "自动部署",
+  "manual": "手动部署",
+  "status": "状态",
+  "currentCommit": "当前 commit",
+  "runtimeState": "容器状态",
+  "desiredState": "期望状态",
+  "error": "错误",
+  "retry": "重试",
+  "loading": "正在加载…",
+  "operationSucceeded": "操作完成",
+  "copy": "复制",
+  "noLogs": "暂无日志",
+  "serviceOnline": "服务在线",
+  "unknown": "未知"
+  ,"editProject": "编辑项目"
+  ,"back": "上一步"
+  ,"next": "下一步"
+  ,"saveOnly": "仅保存"
+  ,"saveAndSync": "保存并立即同步"
+  ,"basicInformation": "基本信息"
+  ,"gitSource": "Git 来源"
+  ,"manifest": "部署清单"
+  ,"deploymentPolicy": "部署策略"
+  ,"environmentAndReview": "变量与确认"
+  ,"basicInformationHint": "先给项目命名。项目 ID 会自动生成，用于容器、镜像和数据目录。"
+  ,"projectIdHint": "小写字母、数字和短横线；创建后不可修改。"
+  ,"gitSourceHint": "填写远程仓库并测试真实连接。ProjectDeployer 会读取分支和部署清单，但此时不会创建项目。"
+  ,"credential": "SSH deploy key"
+  ,"noCredential": "不使用凭据（公开仓库）"
+  ,"manifestPath": "部署清单路径"
+  ,"manifestPathHint": "相对于仓库根目录，默认 project-deployer.json"
+  ,"gitAndManifestReady": "Git 连接和部署清单均有效"
+  ,"manifestNeedsAttention": "Git 已连接，但部署清单需要处理"
+  ,"manifestMissingHint": "目标分支里没有部署清单。填写下面的运行信息并复制生成的 JSON，将文件提交并 push 到仓库后重新检测。"
+  ,"manifestInvalidHint": "仓库中的部署清单无效或与项目 ID 不匹配。可参考下面生成的 JSON 修复，提交并 push 后重新检测。"
+  ,"build": "Docker 构建"
+  ,"dockerfile": "Dockerfile 路径"
+  ,"buildContext": "构建上下文"
+  ,"command": "容器启动命令"
+  ,"commandHint": "每行一个参数，例如第一行 /app/server"
+  ,"publishPort": "发布容器端口"
+  ,"containerPort": "容器端口"
+  ,"hostPort": "树莓派端口"
+  ,"persistentVolume": "使用持久化数据卷"
+  ,"volumeName": "数据卷名称"
+  ,"containerPath": "容器内路径"
+  ,"readOnly": "只读"
+  ,"healthCheck": "启用 HTTP 健康检查"
+  ,"healthPath": "健康检查路径"
+  ,"environmentDeclarations": "环境变量声明"
+  ,"addEnvironmentVariable": "添加环境变量"
+  ,"variableName": "变量名"
+  ,"required": "必填"
+  ,"secret": "敏感"
+  ,"memoryMiB": "内存限制（MiB）"
+  ,"cpuPercent": "CPU 限制（%）"
+  ,"restartPolicy": "重启策略"
+  ,"copyJson": "复制 JSON"
+  ,"copied": "已复制"
+  ,"commitManifestHint": "将 JSON 保存为上面指定的部署清单路径，commit 并 push 后点击“重新检测”。"
+  ,"testAgain": "测试连接并检测"
+  ,"deploymentPolicyHint": "选择何时部署新 commit，并可按变更路径过滤。"
+  ,"automaticHint": "发现符合条件的新 commit 后自动构建并切换容器。"
+  ,"manualHint": "只构建 ready release，需要你在管理台手动点击部署。"
+  ,"includePaths": "包含路径"
+  ,"excludePaths": "排除路径"
+  ,"pathsHint": "每行一个路径或 glob，例如 service/**"
+  ,"environmentValues": "环境变量值"
+  ,"environmentValuesHint": "变量来自仓库中的部署清单。敏感值只写入 Pi 的本地数据库，不会返回到列表接口。"
+  ,"noEnvironmentVariables": "部署清单没有声明环境变量。"
+  ,"secretValueHint": "敏感值将隐藏显示"
+  ,"review": "创建前确认"
+  ,"invalidBasicInformation": "请填写项目名称，并使用有效的小写项目 ID。"
+  ,"invalidPollInterval": "轮询间隔必须在 15 到 3600 秒之间。"
+  ,"completeGitInformation": "请完整填写仓库、分支和部署清单路径。"
+  ,"requiredEnvironmentMissing": "请填写所有必填环境变量。"
+}

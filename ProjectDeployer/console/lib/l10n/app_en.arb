@@ -1,0 +1,116 @@
+{
+  "@@locale": "en",
+  "appTitle": "ProjectDeployer",
+  "overview": "Overview",
+  "projects": "Projects",
+  "refresh": "Refresh",
+  "newProject": "New project",
+  "totalProjects": "Total projects",
+  "running": "Running",
+  "stopped": "Stopped",
+  "needsAttention": "Needs attention",
+  "emptyProjects": "No projects yet",
+  "emptyProjectsHint": "Create your first Git-driven deployment.",
+  "recentProjects": "Project status",
+  "branch": "Branch",
+  "lastUpdated": "Last updated",
+  "details": "Details",
+  "deployments": "Deployments",
+  "releases": "Releases",
+  "logs": "Logs",
+  "settings": "Settings",
+  "sync": "Sync now",
+  "start": "Start",
+  "stop": "Stop",
+  "restart": "Restart",
+  "rollback": "Rollback",
+  "deploy": "Deploy",
+  "edit": "Edit",
+  "delete": "Delete",
+  "deleteProject": "Delete project",
+  "purgeVolumes": "Also delete Docker volumes (irreversible)",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "save": "Save",
+  "projectId": "Project ID",
+  "projectName": "Project name",
+  "repositoryUrl": "Git repository URL",
+  "credentialId": "SSH credential ID (optional)",
+  "pollSeconds": "Polling interval (seconds)",
+  "automatic": "Automatic deployment",
+  "manual": "Manual deployment",
+  "status": "Status",
+  "currentCommit": "Current commit",
+  "runtimeState": "Runtime state",
+  "desiredState": "Desired state",
+  "error": "Error",
+  "retry": "Retry",
+  "loading": "Loading…",
+  "operationSucceeded": "Operation completed",
+  "copy": "Copy",
+  "noLogs": "No logs",
+  "serviceOnline": "Service online",
+  "unknown": "Unknown"
+  ,"editProject": "Edit project"
+  ,"back": "Back"
+  ,"next": "Next"
+  ,"saveOnly": "Save only"
+  ,"saveAndSync": "Save and sync"
+  ,"basicInformation": "Basics"
+  ,"gitSource": "Git source"
+  ,"manifest": "Manifest"
+  ,"deploymentPolicy": "Policy"
+  ,"environmentAndReview": "Variables & review"
+  ,"basicInformationHint": "Name the project first. Its generated ID identifies containers, images, and data directories."
+  ,"projectIdHint": "Lowercase letters, numbers, and hyphens; it cannot be changed after creation."
+  ,"gitSourceHint": "Enter the remote repository and test the real connection. ProjectDeployer reads branches and the manifest without creating a project."
+  ,"credential": "SSH deploy key"
+  ,"noCredential": "No credential (public repository)"
+  ,"manifestPath": "Manifest path"
+  ,"manifestPathHint": "Relative to the repository root; defaults to project-deployer.json"
+  ,"gitAndManifestReady": "Git connection and manifest are valid"
+  ,"manifestNeedsAttention": "Git connected, but the manifest needs attention"
+  ,"manifestMissingHint": "The target branch has no manifest. Complete the runtime form, copy the JSON, commit and push it, then test again."
+  ,"manifestInvalidHint": "The repository manifest is invalid or belongs to another project. Use the generated JSON as a guide, commit and push the fix, then test again."
+  ,"build": "Docker build"
+  ,"dockerfile": "Dockerfile path"
+  ,"buildContext": "Build context"
+  ,"command": "Container command"
+  ,"commandHint": "One argument per line, for example /app/server on the first line"
+  ,"publishPort": "Publish a container port"
+  ,"containerPort": "Container port"
+  ,"hostPort": "Raspberry Pi port"
+  ,"persistentVolume": "Use a persistent volume"
+  ,"volumeName": "Volume name"
+  ,"containerPath": "Container path"
+  ,"readOnly": "Read only"
+  ,"healthCheck": "Enable HTTP health check"
+  ,"healthPath": "Health-check path"
+  ,"environmentDeclarations": "Environment declarations"
+  ,"addEnvironmentVariable": "Add environment variable"
+  ,"variableName": "Variable name"
+  ,"required": "Required"
+  ,"secret": "Secret"
+  ,"memoryMiB": "Memory limit (MiB)"
+  ,"cpuPercent": "CPU limit (%)"
+  ,"restartPolicy": "Restart policy"
+  ,"copyJson": "Copy JSON"
+  ,"copied": "Copied"
+  ,"commitManifestHint": "Save the JSON at the manifest path above, commit and push it, then select Test again."
+  ,"testAgain": "Test connection and inspect"
+  ,"deploymentPolicyHint": "Choose when new commits deploy, with optional changed-path filters."
+  ,"automaticHint": "Matching new commits are built and switched into service automatically."
+  ,"manualHint": "New commits only create ready releases; deploy them manually from the console."
+  ,"includePaths": "Included paths"
+  ,"excludePaths": "Excluded paths"
+  ,"pathsHint": "One path or glob per line, for example service/**"
+  ,"environmentValues": "Environment values"
+  ,"environmentValuesHint": "Variables come from the repository manifest. Secret values stay in the Pi database and are not returned by list APIs."
+  ,"noEnvironmentVariables": "The manifest declares no environment variables."
+  ,"secretValueHint": "The secret value is obscured"
+  ,"review": "Review before creation"
+  ,"invalidBasicInformation": "Enter a name and a valid lowercase project ID."
+  ,"invalidPollInterval": "The polling interval must be between 15 and 3600 seconds."
+  ,"completeGitInformation": "Complete the repository, branch, and manifest path."
+  ,"requiredEnvironmentMissing": "Complete all required environment variables."
+}

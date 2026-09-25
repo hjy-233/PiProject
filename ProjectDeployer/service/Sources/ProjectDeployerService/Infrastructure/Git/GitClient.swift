@@ -183,7 +183,7 @@ struct GitClient: Sendable {
             .appendingPathComponent(commit, isDirectory: true)
     }
 
-    private func environment(for source: GitSourceConfiguration) throws -> [String: String] {
+    func environment(for source: GitSourceConfiguration) throws -> [String: String] {
         var values = [
             "GIT_TERMINAL_PROMPT": "0",
             "GIT_OPTIONAL_LOCKS": "0",
@@ -222,7 +222,7 @@ struct GitClient: Sendable {
         return values
     }
 
-    private static func isCommit(_ value: String) -> Bool {
+    static func isCommit(_ value: String) -> Bool {
         (40 ... 64).contains(value.count) && value.unicodeScalars.allSatisfy { scalar in
             (48 ... 57).contains(scalar.value) || (97 ... 102).contains(scalar.value)
         }

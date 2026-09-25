@@ -17,6 +17,7 @@ struct ServiceConfigurationTests {
         #expect(configuration.releaseRetentionCount == 5)
         #expect(configuration.deploymentRetentionCount == 100)
         #expect(configuration.minimumFreeSpaceMiB == 512)
+        #expect(configuration.consoleRoot.hasSuffix("/.local/share/project-deployer/console"))
     }
 
     @Test("environment overrides are parsed")
@@ -32,6 +33,7 @@ struct ServiceConfigurationTests {
             "PROJECT_DEPLOYER_RELEASE_RETENTION": "8",
             "PROJECT_DEPLOYER_DEPLOYMENT_RETENTION": "200",
             "PROJECT_DEPLOYER_MIN_FREE_SPACE_MIB": "1024",
+            "PROJECT_DEPLOYER_CONSOLE_ROOT": "/var/lib/project-deployer-console",
         ])
         #expect(configuration.host == "100.64.0.10")
         #expect(configuration.port == 9090)
@@ -43,6 +45,7 @@ struct ServiceConfigurationTests {
         #expect(configuration.releaseRetentionCount == 8)
         #expect(configuration.deploymentRetentionCount == 200)
         #expect(configuration.minimumFreeSpaceMiB == 1024)
+        #expect(configuration.consoleRoot == "/var/lib/project-deployer-console")
     }
 
     @Test("invalid port is rejected")

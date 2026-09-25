@@ -25,9 +25,15 @@ bin_directory="$HOME/.local/bin"
 build_jobs="${PROJECT_DEPLOYER_BUILD_JOBS:-2}"
 service_host="0.0.0.0"
 service_port="10000"
+console_build_directory="$project_directory/console/build/web"
 
 if [[ "$install_root" != /* || "$configuration_directory" != /* || "$data_root" != /* ]]; then
     echo "Installation, configuration, and data paths must be absolute." >&2
+    exit 1
+fi
+
+if [[ ! -f "$console_build_directory/index.html" ]]; then
+    echo "Flutter Web release build is missing." >&2
     exit 1
 fi
 
@@ -68,6 +74,18 @@ install -m 755 "$binary_path" "$release_directory/project-deployer-service"
 install -m 644 "$script_directory/project-deployer.service" "$unit_directory/project-deployer.service"
 install -m 755 "$script_directory/manage-ssh.sh" "$bin_directory/project-deployer-manage-ssh"
 install -m 755 "$script_directory/backup-user.sh" "$bin_directory/project-deployer-backup"
+
+console_directory="$data_root/console"
+console_next="$data_root/.console-next"
+if [[ -e "$console_next" ]]; then
+    find "$console_next" -depth -delete
+fi
+install -d -m 700 "$console_next"
+cp -R "$console_build_directory"/. "$console_next"/
+if [[ -e "$console_directory" ]]; then
+    find "$console_directory" -depth -delete
+fi
+mv "$console_next" "$console_directory"
 
 environment_file="$configuration_directory/environment"
 if [[ ! -e "$environment_file" ]]; then

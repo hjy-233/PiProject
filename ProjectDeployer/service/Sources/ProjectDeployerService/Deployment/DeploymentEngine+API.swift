@@ -1,6 +1,47 @@
 import Foundation
 
 extension DeploymentEngine {
+    func inspectGitSource(
+        _ request: InspectGitSourceRequest,
+    ) async throws -> GitSourceInspectionResponse {
+        guard DeploymentManifest.isValidProjectID(request.projectId) else {
+            throw APIError(
+                status: .unprocessableContent,
+                code: "invalid_project_id",
+                message: "Project id must be a lowercase DNS label.",
+            )
+        }
+        let issues = request.source.validationIssues()
+        guard issues.isEmpty else {
+            throw APIError(
+                status: .unprocessableContent,
+                code: "invalid_git_source",
+                message: "Git source validation failed: \(issues.map(\.code).joined(separator: ", ")).",
+            )
+        }
+        do {
+            return try await git.inspect(projectId: request.projectId, source: request.source)
+        } catch {
+            throw APIError(
+                status: .unprocessableContent,
+                code: "git_inspection_failed",
+                message: Self.errorMessage(error),
+            )
+        }
+    }
+
+    func gitCredentialIds() throws -> [String] {
+        do {
+            return try git.credentialIds()
+        } catch {
+            throw APIError(
+                status: .internalServerError,
+                code: "credential_list_failed",
+                message: "The Git credential list could not be read.",
+            )
+        }
+    }
+
     func createProject(_ request: CreateProjectRequest) async throws -> ProjectSummary {
         let input = try validatedProjectInput(request)
         let now = Date()
@@ -25,13 +66,13 @@ extension DeploymentEngine {
     func updateProject(projectId: String, request: UpdateProjectRequest) async throws -> ProjectSummary {
         try beginOperation(projectId: projectId)
         defer { activeProjects.remove(projectId) }
+        var project = try await project(id: projectId)
         let input = try validatedProjectInput(
             id: projectId,
             name: request.name,
             source: request.source,
-            environment: request.environment,
+            environment: request.environment ?? project.environment,
         )
-        var project = try await project(id: projectId)
         let sourceChanged = project.source != request.source
         project = StoredProject(
             id: project.id,

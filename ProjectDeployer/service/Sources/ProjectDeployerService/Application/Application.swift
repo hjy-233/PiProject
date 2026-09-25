@@ -39,6 +39,7 @@ func buildApplication(
     let router = Router()
     router.add(middleware: APIErrorMiddleware())
     router.add(middleware: LogRequestsMiddleware(.info))
+    router.add(middleware: FileMiddleware(configuration.consoleRoot, searchForIndexHtml: true))
     addValidationRoutes(to: router)
     if let runtime {
         addProjectRoutes(to: router, runtime: runtime)
@@ -85,6 +86,8 @@ private func addProjectRoutes(
     to router: Router<BasicRequestContext>,
     runtime: ProjectRuntime,
 ) {
+    addGitInspectionRoutes(to: router, runtime: runtime)
+
     router.get("/api/v1/projects") { _, _ -> [ProjectSummary] in
         try await runtime.engine.projects()
     }
@@ -135,6 +138,23 @@ private func addProjectRoutes(
             projectId: projectId,
             releaseId: deployment.releaseId,
         )
+    }
+}
+
+private func addGitInspectionRoutes(
+    to router: Router<BasicRequestContext>,
+    runtime: ProjectRuntime,
+) {
+    router.get("/api/v1/git/credentials") { _, _ -> GitCredentialListResponse in
+        try await GitCredentialListResponse(credentials: runtime.engine.gitCredentialIds())
+    }
+
+    router.post("/api/v1/sources/git/inspect") { request, context -> GitSourceInspectionResponse in
+        let source = try await request.decode(
+            as: InspectGitSourceRequest.self,
+            context: context,
+        )
+        return try await runtime.engine.inspectGitSource(source)
     }
 }
 

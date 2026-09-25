@@ -7,6 +7,73 @@ import Testing
 
 @Suite("Project runtime", .serialized)
 struct ProjectRuntimeTests {
+    @Test("Git credential list returns installed credential ids")
+    func gitCredentialList() async throws {
+        let dataRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dataRoot) }
+        let credentials = dataRoot.appendingPathComponent("credentials", isDirectory: true)
+        try FileManager.default.createDirectory(at: credentials, withIntermediateDirectories: true)
+        try Data("key".utf8).write(to: credentials.appendingPathComponent("github-demo"))
+        let configuration = try ServiceConfiguration(environment: [
+            "PROJECT_DEPLOYER_DATA_ROOT": dataRoot.path,
+            "PROJECT_DEPLOYER_DOCKER_EXECUTABLE": "/usr/bin/false",
+        ])
+        let runtime = try ProjectRuntime(
+            configuration: configuration,
+            logger: Logger(label: "project-deployer-tests"),
+        )
+        let application = buildApplication(
+            configuration: configuration,
+            runtime: runtime,
+            includeRuntimeServices: false,
+        )
+
+        try await application.test(.router) { client in
+            try await client.execute(uri: "/api/v1/git/credentials", method: .get) { response in
+                #expect(response.status == .ok)
+                let result = try JSONDecoder().decode(GitCredentialListResponse.self, from: response.body)
+                #expect(result.credentials == ["github-demo"])
+            }
+        }
+    }
+
+    @Test("Git inspection rejects an invalid project id before network access")
+    func gitInspectionValidation() async throws {
+        let dataRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dataRoot) }
+        let configuration = try ServiceConfiguration(environment: [
+            "PROJECT_DEPLOYER_DATA_ROOT": dataRoot.path,
+            "PROJECT_DEPLOYER_DOCKER_EXECUTABLE": "/usr/bin/false",
+        ])
+        let runtime = try ProjectRuntime(
+            configuration: configuration,
+            logger: Logger(label: "project-deployer-tests"),
+        )
+        let application = buildApplication(
+            configuration: configuration,
+            runtime: runtime,
+            includeRuntimeServices: false,
+        )
+        let body = try JSONEncoder().encode(
+            InspectGitSourceRequest(projectId: "Invalid ID", source: .validFixture),
+        )
+
+        try await application.test(.router) { client in
+            try await client.execute(
+                uri: "/api/v1/sources/git/inspect",
+                method: .post,
+                headers: [.contentType: "application/json"],
+                body: .init(data: body),
+            ) { response in
+                #expect(response.status == .unprocessableContent)
+                let result = try JSONDecoder().decode(APIErrorEnvelope.self, from: response.body)
+                #expect(result.error.code == "invalid_project_id")
+            }
+        }
+    }
+
     @Test("project creation is persisted and duplicate ids are rejected")
     func projectCreationAndPersistence() async throws {
         let dataRoot = FileManager.default.temporaryDirectory

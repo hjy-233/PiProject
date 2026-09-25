@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-for command_name in ssh rsync; do
+for command_name in ssh rsync flutter; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
         echo "Missing required command: $command_name" >&2
         exit 1
@@ -18,6 +18,11 @@ if [[ -z "$remote_target" || "$remote_target" == -* || "$remote_target" == *$'\n
     echo "PROJECT_DEPLOYER_TARGET is invalid." >&2
     exit 1
 fi
+
+(
+    cd "$project_directory/console"
+    flutter build web --release --base-href /
+)
 
 remote_source_directory="$(ssh -o BatchMode=yes "$remote_target" '
     set -eu

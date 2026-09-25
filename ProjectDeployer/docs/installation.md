@@ -56,7 +56,8 @@ curl --fail http://127.0.0.1:10000/health
 curl --fail http://pi.local:10000/health
 ```
 
-部署脚本将服务监听在 `0.0.0.0:10000`，可通过局域网主机名、IP 或 Tailscale 地址访问。当前版本没有认证层，请勿将该端口暴露到公网。具体请求见 [HTTP API](api.md)。
+部署脚本将服务监听在 `0.0.0.0:10000`，Flutter 管理台位于
+`http://pi.local:10000/`，也可通过局域网 IP 或 Tailscale 地址访问。当前版本没有认证层，请勿将该端口暴露到公网。具体请求见 [HTTP API](api.md)。
 
 ## 保留和磁盘策略
 

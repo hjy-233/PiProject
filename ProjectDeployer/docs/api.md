@@ -10,6 +10,8 @@ curl --fail http://pi.local:10000/health
 
 ## 创建项目
 
+Flutter 管理台的创建向导会先调用 Git inspection 接口，真实连接远程仓库、确认目标分支并读取部署清单。仓库没有部署清单时，向导会根据 Docker 构建、端口、volume、健康检查、资源限制和环境变量声明生成可复制的 `project-deployer.json`；文件提交并 push 后必须重新检测通过，才能创建项目。
+
 ```bash
 curl --fail-with-body \
   --request POST \
@@ -82,6 +84,8 @@ curl --fail-with-body --request DELETE \
 | `POST` | `/api/v1/projects/{id}/restart` | 无 |
 | `POST` | `/api/v1/projects/{id}/rollback` | 无 |
 | `GET` | `/api/v1/projects/{id}/logs?lines=200` | `lines` 范围最终限制为 1 到 1000 |
+| `GET` | `/api/v1/git/credentials` | 返回已安装 SSH deploy key 的 ID，不返回私钥内容 |
+| `POST` | `/api/v1/sources/git/inspect` | `projectId` 与完整 Git source；返回分支、commit 和 manifest 校验结果 |
 
 `automatic` 项目在同步完成后直接部署；`manual` 项目只生成 `ready` release，再调用 `deploy`。
 
