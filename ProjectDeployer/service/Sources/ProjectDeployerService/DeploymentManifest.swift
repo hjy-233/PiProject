@@ -83,7 +83,7 @@ struct DeploymentManifest: Codable, Equatable, Sendable {
         if schemaVersion != 1 {
             issues.append(.init(code: "unsupported_schema", field: "schemaVersion"))
         }
-        if !Self.isDNSLabel(projectId) {
+        if !Self.isValidProjectID(projectId) {
             issues.append(.init(code: "invalid_project_id", field: "projectId"))
         }
         if platform != "linux/arm64" {
@@ -114,7 +114,7 @@ struct DeploymentManifest: Codable, Equatable, Sendable {
     private func validateEnvironment(into issues: inout [ValidationIssue]) {
         var names: Set<String> = []
         for variable in environment {
-            if !Self.isEnvironmentName(variable.name) {
+            if !Self.isValidEnvironmentName(variable.name) {
                 issues.append(.init(code: "invalid_environment_name", field: "environment.name"))
             }
             if !names.insert(variable.name).inserted {
@@ -146,7 +146,7 @@ struct DeploymentManifest: Codable, Equatable, Sendable {
         var names: Set<String> = []
         var paths: Set<String> = []
         for volume in volumes {
-            if !Self.isDNSLabel(volume.name) {
+            if !Self.isValidProjectID(volume.name) {
                 issues.append(.init(code: "invalid_volume_name", field: "volumes.name"))
             }
             if !Self.isSafeContainerPath(volume.containerPath) {
@@ -166,7 +166,7 @@ struct DeploymentManifest: Codable, Equatable, Sendable {
             return
         }
 
-        if !ports.contains(where: { $0.container == healthCheck.port }) {
+        if !ports.contains(where: { $0.container == healthCheck.port && $0.protocol == .tcp }) {
             issues.append(.init(code: "unknown_health_port", field: "healthCheck.port"))
         }
         if healthCheck.type == .http {
@@ -195,7 +195,7 @@ struct DeploymentManifest: Codable, Equatable, Sendable {
         }
     }
 
-    private static func isDNSLabel(_ value: String) -> Bool {
+    static func isValidProjectID(_ value: String) -> Bool {
         guard (1 ... 63).contains(value.count), value.first != "-", value.last != "-" else {
             return false
         }
@@ -206,7 +206,7 @@ struct DeploymentManifest: Codable, Equatable, Sendable {
         }
     }
 
-    private static func isEnvironmentName(_ value: String) -> Bool {
+    static func isValidEnvironmentName(_ value: String) -> Bool {
         guard let first = value.unicodeScalars.first else {
             return false
         }

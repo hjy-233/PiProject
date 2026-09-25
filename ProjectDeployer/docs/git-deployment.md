@@ -19,11 +19,11 @@ Git 来源配置保存在 ProjectDeployer 数据库，不写入受部署仓库�
 }
 ```
 
-- `repositoryURL`：首版接受 HTTPS 或 `ssh://`，不在 URL 中保存密码或 token。
+- `repositoryURL`：当前接受公开 HTTPS 或 `ssh://`，不允许在 URL 中保存密码或 token。
 - `branch`：精确分支名，查询时转换为 `refs/heads/<branch>`，不把输入解释为任意 refspec。
 - `manifestPath`：仓库内 manifest 的相对路径。
 - `pollIntervalSeconds`：首版允许 15 到 3600 秒。
-- `credentialId`：引用 ProjectDeployer 独立保存的凭据，不是凭据内容。
+- `credentialId`：引用 ProjectDeployer 独立保存的 SSH deploy key，不是凭据内容。
 - `includePaths`：为空表示任意文件变化都可触发；否则至少有一个匹配才触发。
 - `excludePaths`：匹配的变更不计入触发判断。
 - `mode`：`automatic` 自动部署，`manual` 只同步并等待确认。
@@ -71,11 +71,10 @@ fetch 到 bare mirror
 
 ## 连续 push
 
-一个项目只能存在一个构建或部署操作。如果部署期间检测到多个新 commit，只保留最新待处理 SHA；当前操作结束后重新比较远端。这样不会让 Pi 同时编译多个过时版本。
+一个项目只能存在一个构建或部署操作。当前操作结束后，下一轮轮询会重新读取远端分支的最新 SHA，因此连续 push 不会并发构建同一个项目。
 
 ## 私有仓库
 
 - SSH：每个 Git 服务或项目使用只读 deploy key，固定主机公钥，不启用交互式密码提示。
-- HTTPS：token 存在凭据存储中，通过临时 credential helper 提供，不写进命令参数、URL、日志或 release。
+- HTTPS：当前只支持无需身份验证的仓库；HTTPS token 认证尚未实现。
 - Git 子模块首版不支持，避免递归凭据和来源范围失控。
-

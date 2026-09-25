@@ -5,7 +5,7 @@
 - [x] 确认 Raspberry Pi OS Lite 64-bit 与 Swift Linux 路线可行。
 - [x] 确定 Flutter Web + Swift + Docker + systemd 技术边界。
 - [x] 固定 MVP、架构、安全边界和 manifest v1 草案。
-- [ ] 在 Raspberry Pi 上记录系统、Docker、存储与网络基线。
+- [x] 在 Raspberry Pi 上记录系统、Docker、存储与网络基线。
 
 完成条件：设计可以指导实现，尚未承诺未验证的 Pi 环境细节。
 
@@ -24,15 +24,15 @@
 
 ## Phase 2：Git 自动部署纵切
 
-- [ ] 持久化远程仓库、分支、凭据引用和自动部署条件。
-- [ ] 使用 `git ls-remote` 主动检测分支 SHA。
-- [ ] fetch 到 bare mirror，并把精确 commit 签出为不可变 release。
-- [ ] 根据 include/exclude 路径条件决定自动部署。
-- [ ] SQLite 持久化 Project、Release 与 Deployment。
-- [ ] 通过结构化参数调用 Git 和 Docker，并从 Dockerfile 构建 ARM64 镜像。
-- [ ] 实现 deploy、start、stop、restart 和有限日志读取。
-- [ ] 实现健康检查和失败恢复 previous release。
-- [ ] 重启服务后与 Docker 实际状态对账。
+- [x] 持久化远程仓库、分支、凭据引用和自动部署条件。
+- [x] 使用 `git ls-remote` 主动检测分支 SHA。
+- [x] fetch 到 bare mirror，并把精确 commit 签出为不可变 release。
+- [x] 根据 include/exclude 路径条件决定自动部署。
+- [x] SQLite 持久化 Project、Release 与 Deployment。
+- [x] 通过结构化参数调用 Git 和 Docker，并从 Dockerfile 构建 ARM64 镜像。
+- [x] 实现 deploy、start、stop、restart 和有限日志读取。
+- [x] 实现健康检查和失败恢复 previous release。
+- [x] 重启服务后与 Docker 实际状态对账。
 
 完成条件：向测试仓库的目标分支 push 后，Pi 自动构建并部署真实 ARM64 hello service；错误版本会恢复 previous release。
 
@@ -50,7 +50,7 @@
 ## Phase 4：Pi 安装与自举
 
 - [ ] 专用系统用户与目录权限。
-- [ ] `systemd` unit、安装和升级脚本。
+- [x] `systemd` unit、安装和升级脚本。
 - [ ] Tailscale 私网监听与管理员凭据初始化。
 - [ ] Docker 日志轮转、磁盘保留策略和备份说明。
 - [ ] 断电、重启、磁盘不足和容器异常测试。

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "projectId": "hello-service",
+  "platform": "linux/arm64",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "command": ["/usr/local/bin/serve"],
+  "environment": [],
+  "ports": [
+    {
+      "container": 8080,
+      "host": 18081,
+      "protocol": "tcp"
+    }
+  ],
+  "volumes": [],
+  "healthCheck": {
+    "type": "http",
+    "path": "/health",
+    "port": 8080,
+    "timeoutSeconds": 2,
+    "startPeriodSeconds": 1,
+    "retries": 10
+  },
+  "resources": {
+    "memoryMiB": 64,
+    "cpuPercent": 25
+  },
+  "restartPolicy": "unless-stopped"
+}

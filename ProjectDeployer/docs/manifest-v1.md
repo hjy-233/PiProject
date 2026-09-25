@@ -53,20 +53,20 @@ manifest 位于项目 Git 仓库内，描述如何构建并运行该仓库的一
 
 ## 字段规则
 
-| 字段 | 规则 |
-| --- | --- |
-| `schemaVersion` | 必须为整数 `1` |
-| `projectId` | 小写字母、数字和连字符；必须与 URL 中的项目一致 |
-| `platform` | 首版只接受 `linux/arm64` |
-| `build.dockerfile` | 仓库内 Dockerfile 的安全相对路径 |
-| `build.context` | 仓库内 build context 的安全相对路径；仓库根目录写 `.` |
-| `command` | 非空参数数组；不接受单个 Shell 字符串 |
-| `environment` | 只声明变量名称与性质，值由 ProjectDeployer 单独保存 |
-| `ports` | 主机端口必须唯一且处于允许范围 |
-| `volumes` | 只允许命名持久卷，不接受任意主机绝对路径 |
-| `healthCheck` | 首版支持 `http` 和 `tcp`；必须设置有限超时与次数 |
-| `resources` | 必须设置合理上限，具体默认值由服务配置决定 |
-| `restartPolicy` | 首版接受 `no`、`on-failure` 和 `unless-stopped` |
+| 字段               | 规则                                                  |
+|--------------------|-------------------------------------------------------|
+| `schemaVersion`    | 必须为整数 `1`                                        |
+| `projectId`        | 小写字母、数字和连字符；必须与 URL 中的项目一致       |
+| `platform`         | 首版只接受 `linux/arm64`                              |
+| `build.dockerfile` | 仓库内 Dockerfile 的安全相对路径                      |
+| `build.context`    | 仓库内 build context 的安全相对路径；仓库根目录写 `.` |
+| `command`          | 非空参数数组；不接受单个 Shell 字符串                 |
+| `environment`      | 只声明变量名称与性质，值由 ProjectDeployer 单独保存   |
+| `ports`            | 主机端口必须唯一且处于允许范围                        |
+| `volumes`          | 只允许命名持久卷，不接受任意主机绝对路径              |
+| `healthCheck`      | 首版支持 `http` 和 `tcp`；必须设置有限超时与次数      |
+| `resources`        | 必须设置合理上限，具体默认值由服务配置决定            |
+| `restartPolicy`    | 首版接受 `no`、`on-failure` 和 `unless-stopped`       |
 
 ## Git release 约定
 

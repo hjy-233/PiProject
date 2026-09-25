@@ -1,0 +1,21 @@
+[Unit]
+Description=ProjectDeployer control service
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/lib/project-deployer/current/project-deployer-service
+EnvironmentFile=-%h/.config/project-deployer/environment
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.local/share/project-deployer
+
+[Install]
+WantedBy=default.target

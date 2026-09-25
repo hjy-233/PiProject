@@ -37,7 +37,7 @@ Docker CLI / Engine
 └── project-deployer.sqlite
 ```
 
-Swift 服务采用 Hummingbird 作为轻量 HTTP 层，使用 Swift Concurrency 管理任务生命周期。Docker 操作通过 Swift Subprocess 以参数数组调用本机 Docker CLI；首版不直接实现 Docker Engine HTTP 协议。
+Swift 服务采用 Hummingbird 作为轻量 HTTP 层，使用 Swift Concurrency 管理任务生命周期。Docker 操作通过 Foundation `Process` 以参数数组调用本机 Docker CLI；首版不直接实现 Docker Engine HTTP 协议。
 
 ## 3. 核心模型
 
@@ -92,7 +92,7 @@ Swift 服务采用 Hummingbird 作为轻量 HTTP 层，使用 Swift Concurrency 
 | `POST` | `/api/v1/projects/{id}/restart` | 重启当前 release |
 | `POST` | `/api/v1/projects/{id}/rollback` | 切回上一个可用 release |
 | `GET` | `/api/v1/projects/{id}/logs` | 查询有限历史日志 |
-| `GET` | `/api/v1/projects/{id}/logs/stream` | WebSocket 实时日志 |
+| `GET` | `/api/v1/projects/{id}/logs/stream` | WebSocket 实时日志（后续版本） |
 
 错误响应必须带稳定错误码和可操作说明，不向客户端返回原始密钥、完整环境变量或内部调用栈。
 
