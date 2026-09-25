@@ -45,10 +45,12 @@ struct DockerClient: Sendable {
                 tag,
                 context.path,
             ],
+            environment: environment,
         )
         let inspection = try await runner.requireSuccess(
             executable: executable,
             arguments: ["image", "inspect", "--format", "{{.Id}}", tag],
+            environment: environment,
         )
         let imageId = inspection.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard imageId.hasPrefix("sha256:") else {
@@ -68,24 +70,7 @@ struct DockerClient: Sendable {
         try writeEnvironmentFile(project: project, manifest: manifest)
         try await removeContainerIfPresent(projectId: project.id)
 
-        var arguments = [
-            "run",
-            "--detach",
-            "--name",
-            containerName(projectId: project.id),
-            "--label",
-            "dev.dcstudio.project-deployer.managed=true",
-            "--label",
-            "dev.dcstudio.project-deployer.project=\(project.id)",
-            "--label",
-            "dev.dcstudio.project-deployer.release=\(release.id)",
-            "--restart",
-            manifest.restartPolicy.rawValue,
-            "--memory",
-            "\(manifest.resources.memoryMiB)m",
-            "--cpus",
-            Self.cpuLimit(percent: manifest.resources.cpuPercent),
-        ]
+        var arguments = baseContainerArguments(project: project, release: release, manifest: manifest)
 
         if !manifest.environment.isEmpty {
             arguments.append(contentsOf: ["--env-file", environmentFileURL(projectId: project.id).path])
@@ -105,13 +90,18 @@ struct DockerClient: Sendable {
         }
         arguments.append(imageTag)
         arguments.append(contentsOf: manifest.command)
-        _ = try await runner.requireSuccess(executable: executable, arguments: arguments)
+        _ = try await runner.requireSuccess(
+            executable: executable,
+            arguments: arguments,
+            environment: environment,
+        )
     }
 
     func start(projectId: String) async throws {
         _ = try await runner.requireSuccess(
             executable: executable,
             arguments: ["start", containerName(projectId: projectId)],
+            environment: environment,
         )
     }
 
@@ -123,6 +113,7 @@ struct DockerClient: Sendable {
         _ = try await runner.requireSuccess(
             executable: executable,
             arguments: ["stop", "--time", "10", containerName(projectId: projectId)],
+            environment: environment,
         )
     }
 
@@ -130,6 +121,7 @@ struct DockerClient: Sendable {
         _ = try await runner.requireSuccess(
             executable: executable,
             arguments: ["restart", "--time", "10", containerName(projectId: projectId)],
+            environment: environment,
         )
     }
 
@@ -140,6 +132,7 @@ struct DockerClient: Sendable {
         _ = try await runner.requireSuccess(
             executable: executable,
             arguments: ["rm", "--force", containerName(projectId: projectId)],
+            environment: environment,
         )
     }
 
@@ -164,6 +157,7 @@ struct DockerClient: Sendable {
         let result = try await runner.requireSuccess(
             executable: executable,
             arguments: ["logs", "--tail", String(lines), containerName(projectId: projectId)],
+            environment: environment,
         )
         if result.standardError.isEmpty {
             return result.standardOutput
@@ -181,6 +175,7 @@ struct DockerClient: Sendable {
                 "{{.State.Running}}|{{.State.Status}}",
                 containerName(projectId: projectId),
             ],
+            environment: environment,
         )
         guard result.succeeded else {
             if Self.isMissingContainerError(result.standardError) {
@@ -244,6 +239,29 @@ struct DockerClient: Sendable {
             .appendingPathComponent("projects", isDirectory: true)
             .appendingPathComponent(projectId, isDirectory: true)
             .appendingPathComponent("environment", isDirectory: false)
+    }
+
+    var environment: [String: String] {
+        ["DOCKER_CONFIG": dataRoot.appendingPathComponent("docker-config", isDirectory: true).path]
+    }
+
+    private func baseContainerArguments(
+        project: StoredProject,
+        release: ReleaseRecord,
+        manifest: DeploymentManifest,
+    ) -> [String] {
+        [
+            "run", "--detach",
+            "--name", containerName(projectId: project.id),
+            "--label", "dev.dcstudio.project-deployer.managed=true",
+            "--label", "dev.dcstudio.project-deployer.project=\(project.id)",
+            "--label", "dev.dcstudio.project-deployer.release=\(release.id)",
+            "--restart", manifest.restartPolicy.rawValue,
+            "--log-opt", "max-size=10m",
+            "--log-opt", "max-file=3",
+            "--memory", "\(manifest.resources.memoryMiB)m",
+            "--cpus", Self.cpuLimit(percent: manifest.resources.cpuPercent),
+        ]
     }
 
     private func repositoryURL(path: String, inside releaseDirectory: URL) throws -> URL {

@@ -45,6 +45,8 @@ sudo loginctl enable-linger "$USER"
 `~/.local/share/project-deployer/`。更新时重新拉取仓库后再次运行同一个脚本；
 ProjectDeployer 不负责部署自身。
 
+安装器同时安装 `project-deployer-manage-ssh` 和 `project-deployer-backup` 两个用户命令。
+
 ## 检查运行状态
 
 ```bash
@@ -55,3 +57,41 @@ curl --fail http://pi.local:10000/health
 ```
 
 部署脚本将服务监听在 `0.0.0.0:10000`，可通过局域网主机名、IP 或 Tailscale 地址访问。当前版本没有认证层，请勿将该端口暴露到公网。具体请求见 [HTTP API](api.md)。
+
+## 保留和磁盘策略
+
+默认保留最近 5 个 release、100 条 deployment 记录，并始终保护 current 与 previous release。清理 release 时会一并删除签出目录和对应 Docker 镜像：
+
+```text
+PROJECT_DEPLOYER_RELEASE_RETENTION=5
+PROJECT_DEPLOYER_DEPLOYMENT_RETENTION=100
+PROJECT_DEPLOYER_MIN_FREE_SPACE_MIB=512
+```
+
+同步前可用空间低于门槛时会拒绝新构建，现有容器不会停止。
+
+## 备份与恢复
+
+```bash
+project-deployer-backup
+```
+
+备份默认位于 `~/.local/share/project-deployer-backups/`，并生成 SHA-256 文件。它包含 SQLite、Git mirror、release、凭据与配置，不包含 Docker volume 和 image；有状态项目的 volume 必须按项目自身方式另行备份。
+
+恢复会覆盖归档内同名文件，操作前先保留当前目录副本：
+
+```bash
+sha256sum --check /absolute/path/to/project-deployer-TIMESTAMP.tar.gz.sha256
+systemctl --user stop project-deployer.service
+tar --extract --gzip --file /absolute/path/to/project-deployer-TIMESTAMP.tar.gz --directory /
+systemctl --user start project-deployer.service
+curl --fail http://127.0.0.1:10000/health
+```
+
+## 故障恢复
+
+- Docker daemon 重启：容器遵循 manifest restart policy；控制服务每分钟对账，缺失的 running 容器会从 current release 重建。
+- Pi 重启：启用 user linger 后 systemd 自动启动；启动时中断中的 deployment 会标记失败并立即对账。
+- 磁盘不足：新同步会停止，释放空间后再次 sync；不要手动删除 current/previous release。
+- 容器异常：查询项目详情和日志后 restart，无法恢复时 rollback。
+- 数据库损坏：停止服务，从最近备份恢复后重新启动并检查项目状态。

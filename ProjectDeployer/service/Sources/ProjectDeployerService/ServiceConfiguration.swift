@@ -8,6 +8,7 @@ struct ServiceConfiguration: Equatable, Sendable {
         case invalidLogLevel(String)
         case invalidAbsolutePath(variable: String, value: String)
         case invalidPollSweep(String)
+        case invalidRetention(variable: String, value: String)
 
         var description: String {
             switch self {
@@ -21,6 +22,8 @@ struct ServiceConfiguration: Equatable, Sendable {
                 "\(variable) must be an absolute path, received: \(value)."
             case let .invalidPollSweep(value):
                 "PROJECT_DEPLOYER_POLL_SWEEP_SECONDS must be from 1 through 60, received: \(value)."
+            case let .invalidRetention(variable, value):
+                "\(variable) is invalid, received: \(value)."
             }
         }
     }
@@ -32,6 +35,9 @@ struct ServiceConfiguration: Equatable, Sendable {
     let gitExecutable: String
     let dockerExecutable: String
     let pollSweepSeconds: Int
+    let releaseRetentionCount: Int
+    let deploymentRetentionCount: Int
+    let minimumFreeSpaceMiB: Int
 
     init(environment: [String: String] = ProcessInfo.processInfo.environment) throws {
         let host = environment["PROJECT_DEPLOYER_HOST"] ?? "127.0.0.1"
@@ -66,6 +72,22 @@ struct ServiceConfiguration: Equatable, Sendable {
             throw ConfigurationError.invalidPollSweep(pollSweepValue)
         }
 
+        let releaseRetentionCount = try Self.positiveInteger(
+            environment["PROJECT_DEPLOYER_RELEASE_RETENTION"] ?? "5",
+            variable: "PROJECT_DEPLOYER_RELEASE_RETENTION",
+            range: 2 ... 50,
+        )
+        let deploymentRetentionCount = try Self.positiveInteger(
+            environment["PROJECT_DEPLOYER_DEPLOYMENT_RETENTION"] ?? "100",
+            variable: "PROJECT_DEPLOYER_DEPLOYMENT_RETENTION",
+            range: 10 ... 10000,
+        )
+        let minimumFreeSpaceMiB = try Self.positiveInteger(
+            environment["PROJECT_DEPLOYER_MIN_FREE_SPACE_MIB"] ?? "512",
+            variable: "PROJECT_DEPLOYER_MIN_FREE_SPACE_MIB",
+            range: 128 ... 1_048_576,
+        )
+
         self.host = host
         self.port = port
         self.logLevel = logLevel
@@ -73,6 +95,9 @@ struct ServiceConfiguration: Equatable, Sendable {
         self.gitExecutable = gitExecutable
         self.dockerExecutable = dockerExecutable
         self.pollSweepSeconds = pollSweepSeconds
+        self.releaseRetentionCount = releaseRetentionCount
+        self.deploymentRetentionCount = deploymentRetentionCount
+        self.minimumFreeSpaceMiB = minimumFreeSpaceMiB
     }
 
     private static func logLevel(from value: String) -> Logger.Level? {
@@ -103,5 +128,16 @@ struct ServiceConfiguration: Equatable, Sendable {
         guard value.hasPrefix("/"), !value.contains("\0"), !value.contains("\n") else {
             throw ConfigurationError.invalidAbsolutePath(variable: variable, value: value)
         }
+    }
+
+    private static func positiveInteger(
+        _ value: String,
+        variable: String,
+        range: ClosedRange<Int>,
+    ) throws -> Int {
+        guard let result = Int(value), range.contains(result) else {
+            throw ConfigurationError.invalidRetention(variable: variable, value: value)
+        }
+        return result
     }
 }

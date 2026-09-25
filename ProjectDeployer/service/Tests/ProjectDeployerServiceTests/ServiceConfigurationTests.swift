@@ -14,6 +14,9 @@ struct ServiceConfigurationTests {
         #expect(configuration.gitExecutable == "/usr/bin/git")
         #expect(configuration.dockerExecutable == "/usr/bin/docker")
         #expect(configuration.pollSweepSeconds == 5)
+        #expect(configuration.releaseRetentionCount == 5)
+        #expect(configuration.deploymentRetentionCount == 100)
+        #expect(configuration.minimumFreeSpaceMiB == 512)
     }
 
     @Test("environment overrides are parsed")
@@ -26,6 +29,9 @@ struct ServiceConfigurationTests {
             "PROJECT_DEPLOYER_GIT_EXECUTABLE": "/opt/bin/git",
             "PROJECT_DEPLOYER_DOCKER_EXECUTABLE": "/opt/bin/docker",
             "PROJECT_DEPLOYER_POLL_SWEEP_SECONDS": "12",
+            "PROJECT_DEPLOYER_RELEASE_RETENTION": "8",
+            "PROJECT_DEPLOYER_DEPLOYMENT_RETENTION": "200",
+            "PROJECT_DEPLOYER_MIN_FREE_SPACE_MIB": "1024",
         ])
         #expect(configuration.host == "100.64.0.10")
         #expect(configuration.port == 9090)
@@ -34,6 +40,9 @@ struct ServiceConfigurationTests {
         #expect(configuration.gitExecutable == "/opt/bin/git")
         #expect(configuration.dockerExecutable == "/opt/bin/docker")
         #expect(configuration.pollSweepSeconds == 12)
+        #expect(configuration.releaseRetentionCount == 8)
+        #expect(configuration.deploymentRetentionCount == 200)
+        #expect(configuration.minimumFreeSpaceMiB == 1024)
     }
 
     @Test("invalid port is rejected")
@@ -64,6 +73,16 @@ struct ServiceConfigurationTests {
     func invalidPollingSweep() {
         #expect(throws: ServiceConfiguration.ConfigurationError.invalidPollSweep("0")) {
             try ServiceConfiguration(environment: ["PROJECT_DEPLOYER_POLL_SWEEP_SECONDS": "0"])
+        }
+    }
+
+    @Test("invalid retention is rejected")
+    func invalidRetention() {
+        #expect(throws: ServiceConfiguration.ConfigurationError.invalidRetention(
+            variable: "PROJECT_DEPLOYER_RELEASE_RETENTION",
+            value: "1",
+        )) {
+            try ServiceConfiguration(environment: ["PROJECT_DEPLOYER_RELEASE_RETENTION": "1"])
         }
     }
 }

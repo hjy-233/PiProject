@@ -21,6 +21,7 @@ install_root="${PROJECT_DEPLOYER_INSTALL_ROOT:-$HOME/.local/lib/project-deployer
 configuration_directory="${PROJECT_DEPLOYER_CONFIG_ROOT:-$HOME/.config/project-deployer}"
 data_root="${PROJECT_DEPLOYER_DATA_ROOT:-$HOME/.local/share/project-deployer}"
 unit_directory="$HOME/.config/systemd/user"
+bin_directory="$HOME/.local/bin"
 build_jobs="${PROJECT_DEPLOYER_BUILD_JOBS:-2}"
 service_host="0.0.0.0"
 service_port="10000"
@@ -62,9 +63,11 @@ binary_path="$(swift build \
     --configuration release \
     --show-bin-path)/project-deployer-service"
 
-install -d -m 700 "$release_directory" "$configuration_directory" "$data_root" "$unit_directory"
+install -d -m 700 "$release_directory" "$configuration_directory" "$data_root" "$unit_directory" "$bin_directory"
 install -m 755 "$binary_path" "$release_directory/project-deployer-service"
 install -m 644 "$script_directory/project-deployer.service" "$unit_directory/project-deployer.service"
+install -m 755 "$script_directory/manage-ssh.sh" "$bin_directory/project-deployer-manage-ssh"
+install -m 755 "$script_directory/backup-user.sh" "$bin_directory/project-deployer-backup"
 
 environment_file="$configuration_directory/environment"
 if [[ ! -e "$environment_file" ]]; then
@@ -77,11 +80,20 @@ if [[ ! -e "$environment_file" ]]; then
         printf 'PROJECT_DEPLOYER_GIT_EXECUTABLE=%s\n' "$(command -v git)"
         printf 'PROJECT_DEPLOYER_DOCKER_EXECUTABLE=%s\n' "$(command -v docker)"
         printf 'PROJECT_DEPLOYER_POLL_SWEEP_SECONDS=5\n'
+        printf 'PROJECT_DEPLOYER_RELEASE_RETENTION=5\n'
+        printf 'PROJECT_DEPLOYER_DEPLOYMENT_RETENTION=100\n'
+        printf 'PROJECT_DEPLOYER_MIN_FREE_SPACE_MIB=512\n'
     } >> "$environment_file"
 else
     environment_file_next="$(mktemp "$configuration_directory/environment.XXXXXX")"
     awk -v service_host="$service_host" -v service_port="$service_port" '
-        BEGIN { found_host = 0; found_port = 0 }
+        BEGIN {
+            found_host = 0
+            found_port = 0
+            found_releases = 0
+            found_deployments = 0
+            found_space = 0
+        }
         /^PROJECT_DEPLOYER_HOST=/ {
             if (found_host == 0) {
                 print "PROJECT_DEPLOYER_HOST=" service_host
@@ -96,6 +108,9 @@ else
             }
             next
         }
+        /^PROJECT_DEPLOYER_RELEASE_RETENTION=/ { found_releases = 1 }
+        /^PROJECT_DEPLOYER_DEPLOYMENT_RETENTION=/ { found_deployments = 1 }
+        /^PROJECT_DEPLOYER_MIN_FREE_SPACE_MIB=/ { found_space = 1 }
         { print }
         END {
             if (found_host == 0) {
@@ -103,6 +118,15 @@ else
             }
             if (found_port == 0) {
                 print "PROJECT_DEPLOYER_PORT=" service_port
+            }
+            if (found_releases == 0) {
+                print "PROJECT_DEPLOYER_RELEASE_RETENTION=5"
+            }
+            if (found_deployments == 0) {
+                print "PROJECT_DEPLOYER_DEPLOYMENT_RETENTION=100"
+            }
+            if (found_space == 0) {
+                print "PROJECT_DEPLOYER_MIN_FREE_SPACE_MIB=512"
             }
         }
     ' "$environment_file" > "$environment_file_next"

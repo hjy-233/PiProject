@@ -38,6 +38,33 @@ JSON
 
 项目 id 创建后不可更改。环境变量的值保存在权限为 `0600` 的本机 SQLite 文件中，列表接口只返回变量名。
 
+## 编辑与删除项目
+
+编辑使用完整替换语义，项目 id 不可修改：
+
+```bash
+curl --fail-with-body --request PUT \
+  --header 'Content-Type: application/json' \
+  --data @project-update.json \
+  http://pi.local:10000/api/v1/projects/hello-service
+```
+
+删除会清理容器、镜像、Git mirror、release 目录和数据库记录，但默认保留 Docker volume：
+
+```bash
+curl --fail-with-body --request DELETE \
+  http://pi.local:10000/api/v1/projects/hello-service
+```
+
+确认业务数据不再需要时才显式清理 volume：
+
+```bash
+curl --fail-with-body --request DELETE \
+  'http://pi.local:10000/api/v1/projects/hello-service?purgeVolumes=true'
+```
+
+`purgeVolumes=true` 不可恢复，执行前应单独备份业务数据。
+
 ## 查询与操作
 
 | 方法 | 路径 | 请求体或参数 |
@@ -45,6 +72,8 @@ JSON
 | `GET` | `/health` | 无 |
 | `GET` | `/api/v1/projects` | 无 |
 | `POST` | `/api/v1/projects` | 项目与 Git 来源 JSON |
+| `PUT` | `/api/v1/projects/{id}` | 名称、Git 来源与环境变量 JSON |
+| `DELETE` | `/api/v1/projects/{id}` | 可选 `purgeVolumes=true` |
 | `GET` | `/api/v1/projects/{id}` | 无 |
 | `POST` | `/api/v1/projects/{id}/sync` | 无 |
 | `POST` | `/api/v1/projects/{id}/deploy` | `{"releaseId":"..."}` |
@@ -58,12 +87,21 @@ JSON
 
 ## SSH 私钥
 
-私有 SSH 仓库通过 `credentialId` 引用部署密钥：
+私有 SSH 仓库通过 `credentialId` 引用部署密钥。私钥不经过当前未加密的 HTTP API，请登录 Pi 后管理：
 
 ```bash
-install -m 600 ./deploy-key ~/.local/share/project-deployer/credentials/github-hello-service
-ssh-keyscan github.com >> ~/.local/share/project-deployer/known_hosts
-chmod 600 ~/.local/share/project-deployer/known_hosts
+project-deployer-manage-ssh credential install github-hello-service ./deploy-key
+project-deployer-manage-ssh credential list
+project-deployer-manage-ssh credential remove github-hello-service
 ```
 
+管理 Git 主机公钥：
+
+```bash
+project-deployer-manage-ssh known-host add github.com
+project-deployer-manage-ssh known-host list
+project-deployer-manage-ssh known-host remove github.com
+```
+
+新增主机后必须通过可信渠道核对显示的公钥指纹，不能只相信本次网络扫描。
 密钥建议使用仓库级只读 deploy key。公有 HTTPS 仓库无需 `credentialId`；当前版本尚未接入 HTTPS token。

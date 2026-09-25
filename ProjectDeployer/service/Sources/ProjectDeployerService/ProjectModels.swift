@@ -39,6 +39,19 @@ struct CreateProjectRequest: Codable, Sendable {
     let environment: [String: String]?
 }
 
+struct UpdateProjectRequest: Codable, Sendable {
+    let name: String
+    let source: GitSourceConfiguration
+    let environment: [String: String]?
+}
+
+struct DeleteProjectResponse: ResponseCodable, Equatable, Sendable {
+    let projectId: String
+    let removedImages: Int
+    let removedVolumes: Int
+    let volumesPurged: Bool
+}
+
 struct DeployProjectRequest: Codable, Sendable {
     let releaseId: String
 }

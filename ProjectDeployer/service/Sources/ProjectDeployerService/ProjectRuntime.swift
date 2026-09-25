@@ -20,6 +20,11 @@ struct ProjectRuntime: Sendable {
             attributes: [.posixPermissions: 0o700],
         )
         let temporaryDirectory = dataRoot.appendingPathComponent("tmp", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: dataRoot.appendingPathComponent("docker-config", isDirectory: true),
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700],
+        )
         let runner = try CommandRunner(temporaryDirectory: temporaryDirectory)
         let store = try ProjectStore(
             path: dataRoot.appendingPathComponent("project-deployer.sqlite").path,
@@ -39,6 +44,9 @@ struct ProjectRuntime: Sendable {
             git: git,
             docker: docker,
             logger: logger,
+            releaseRetentionCount: configuration.releaseRetentionCount,
+            deploymentRetentionCount: configuration.deploymentRetentionCount,
+            minimumFreeSpaceMiB: configuration.minimumFreeSpaceMiB,
         )
         self.engine = engine
         pollingService = ProjectPollingService(
@@ -62,7 +70,12 @@ struct ProjectPollingService: Service {
 
     private func runPollingLoop() async throws {
         await engine.reconcileAll()
+        var nextReconciliation = Date().addingTimeInterval(60)
         while !Task.isCancelled {
+            if Date() >= nextReconciliation {
+                await engine.reconcileAll()
+                nextReconciliation = Date().addingTimeInterval(60)
+            }
             let projectIds = await engine.dueProjectIds()
             for projectId in projectIds {
                 do {

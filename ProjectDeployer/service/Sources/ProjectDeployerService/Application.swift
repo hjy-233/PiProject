@@ -97,6 +97,24 @@ private func addProjectRoutes(
         return try await runtime.engine.createProject(project)
     }
 
+    router.put("/api/v1/projects/:id") { request, context -> ProjectSummary in
+        let projectId = try context.parameters.require("id")
+        let project = try await request.decode(
+            as: UpdateProjectRequest.self,
+            context: context,
+        )
+        return try await runtime.engine.updateProject(projectId: projectId, request: project)
+    }
+
+    router.delete("/api/v1/projects/:id") { request, context -> DeleteProjectResponse in
+        let projectId = try context.parameters.require("id")
+        let purgeVolumes = request.uri.queryParameters.get("purgeVolumes", as: Bool.self) ?? false
+        return try await runtime.engine.deleteProject(
+            projectId: projectId,
+            purgeVolumes: purgeVolumes,
+        )
+    }
+
     router.get("/api/v1/projects/:id") { _, context -> ProjectDetails in
         let projectId = try context.parameters.require("id")
         return try await runtime.engine.details(projectId: projectId)

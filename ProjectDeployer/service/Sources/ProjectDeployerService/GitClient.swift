@@ -138,6 +138,37 @@ struct GitClient: Sendable {
         return release
     }
 
+    func removeProjectData(projectId: String) throws {
+        let mirror = mirrorURL(projectId: projectId)
+        let project = dataRoot
+            .appendingPathComponent("projects", isDirectory: true)
+            .appendingPathComponent(projectId, isDirectory: true)
+        if FileManager.default.fileExists(atPath: mirror.path) {
+            try FileManager.default.removeItem(at: mirror)
+        }
+        if FileManager.default.fileExists(atPath: project.path) {
+            try FileManager.default.removeItem(at: project)
+        }
+    }
+
+    func removeReleaseDirectory(_ release: ReleaseRecord) throws {
+        guard !release.directory.isEmpty else {
+            return
+        }
+        let candidate = URL(fileURLWithPath: release.directory).standardizedFileURL
+        let releasesRoot = dataRoot
+            .appendingPathComponent("projects", isDirectory: true)
+            .appendingPathComponent(release.projectId, isDirectory: true)
+            .appendingPathComponent("releases", isDirectory: true)
+            .standardizedFileURL
+        guard candidate.path.hasPrefix(releasesRoot.path + "/") else {
+            throw GitError(detail: "Refusing to remove a release outside the project data directory.")
+        }
+        if FileManager.default.fileExists(atPath: candidate.path) {
+            try FileManager.default.removeItem(at: candidate)
+        }
+    }
+
     private func mirrorURL(projectId: String) -> URL {
         dataRoot
             .appendingPathComponent("repositories", isDirectory: true)
@@ -178,6 +209,7 @@ struct GitClient: Sendable {
             }
             values["GIT_SSH_COMMAND"] = [
                 "/usr/bin/ssh",
+                "-F /dev/null",
                 "-i \(Self.shellQuoted(key.path))",
                 "-o BatchMode=yes",
                 "-o IdentitiesOnly=yes",
@@ -185,7 +217,7 @@ struct GitClient: Sendable {
                 "-o UserKnownHostsFile=\(Self.shellQuoted(knownHosts.path))",
             ].joined(separator: " ")
         } else {
-            values["GIT_SSH_COMMAND"] = "/usr/bin/ssh -o BatchMode=yes"
+            values["GIT_SSH_COMMAND"] = "/usr/bin/ssh -F /dev/null -o BatchMode=yes"
         }
         return values
     }

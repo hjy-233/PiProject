@@ -22,6 +22,53 @@ extension DeploymentEngine {
         return try await summary(project: project, runtimeState: .stopped)
     }
 
+    func updateProject(projectId: String, request: UpdateProjectRequest) async throws -> ProjectSummary {
+        try beginOperation(projectId: projectId)
+        defer { activeProjects.remove(projectId) }
+        let input = try validatedProjectInput(
+            id: projectId,
+            name: request.name,
+            source: request.source,
+            environment: request.environment,
+        )
+        var project = try await project(id: projectId)
+        let sourceChanged = project.source != request.source
+        project = StoredProject(
+            id: project.id,
+            name: input.name,
+            source: request.source,
+            environment: input.environment,
+            observedCommit: sourceChanged ? nil : project.observedCommit,
+            currentReleaseId: project.currentReleaseId,
+            previousReleaseId: project.previousReleaseId,
+            desiredState: project.desiredState,
+            lastError: nil,
+            createdAt: project.createdAt,
+            updatedAt: Date(),
+            nextPollAt: Date(),
+        )
+        try await store.saveProject(project)
+        return try await summary(project: project)
+    }
+
+    func deleteProject(projectId: String, purgeVolumes: Bool) async throws -> DeleteProjectResponse {
+        try beginOperation(projectId: projectId)
+        defer { activeProjects.remove(projectId) }
+        _ = try await project(id: projectId)
+        let releases = await store.releases(projectId: projectId)
+        try await docker.removeContainerIfPresent(projectId: projectId)
+        let removedImages = try await docker.removeImages(releases.compactMap(\.imageTag))
+        let removedVolumes = purgeVolumes ? try await docker.removeVolumes(projectId: projectId) : 0
+        try git.removeProjectData(projectId: projectId)
+        try await store.deleteProject(id: projectId)
+        return DeleteProjectResponse(
+            projectId: projectId,
+            removedImages: removedImages,
+            removedVolumes: removedVolumes,
+            volumesPurged: purgeVolumes,
+        )
+    }
+
     func projects() async throws -> [ProjectSummary] {
         var summaries: [ProjectSummary] = []
         for project in await store.allProjects() {
@@ -43,7 +90,10 @@ extension DeploymentEngine {
         try beginOperation(projectId: projectId)
         defer { activeProjects.remove(projectId) }
         do {
-            return try await performSync(projectId: projectId, retryFailed: !isBackground)
+            try ensureFreeSpace()
+            let response = try await performSync(projectId: projectId, retryFailed: !isBackground)
+            try await pruneProjectHistory(projectId: projectId)
+            return response
         } catch {
             await saveFailure(projectId: projectId, error: error)
             throw Self.operationError(error, code: "sync_failed")
@@ -138,6 +188,11 @@ extension DeploymentEngine {
     }
 
     func reconcileAll() async {
+        do {
+            try await store.failInterruptedDeployments(at: Date())
+        } catch {
+            logger.error("Unable to recover interrupted deployment records")
+        }
         for storedProject in await store.allProjects() {
             guard !activeProjects.contains(storedProject.id) else { continue }
             do {
@@ -156,22 +211,36 @@ extension DeploymentEngine {
     private func validatedProjectInput(
         _ request: CreateProjectRequest,
     ) throws -> (name: String, environment: [String: String]) {
-        guard DeploymentManifest.isValidProjectID(request.id) else {
+        try validatedProjectInput(
+            id: request.id,
+            name: request.name,
+            source: request.source,
+            environment: request.environment,
+        )
+    }
+
+    private func validatedProjectInput(
+        id: String,
+        name: String,
+        source: GitSourceConfiguration,
+        environment requestedEnvironment: [String: String]?,
+    ) throws -> (name: String, environment: [String: String]) {
+        guard DeploymentManifest.isValidProjectID(id) else {
             throw APIError(
                 status: .unprocessableContent,
                 code: "invalid_project_id",
                 message: "Project id must be a lowercase DNS label.",
             )
         }
-        let name = request.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard (1 ... 100).contains(name.count) else {
+        let normalizedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (1 ... 100).contains(normalizedName.count) else {
             throw APIError(
                 status: .unprocessableContent,
                 code: "invalid_project_name",
                 message: "Project name must contain from 1 through 100 characters.",
             )
         }
-        let sourceIssues = request.source.validationIssues()
+        let sourceIssues = source.validationIssues()
         guard sourceIssues.isEmpty else {
             let codes = sourceIssues.map(\.code).joined(separator: ", ")
             throw APIError(
@@ -180,7 +249,7 @@ extension DeploymentEngine {
                 message: "Git source validation failed: \(codes).",
             )
         }
-        let environment = request.environment ?? [:]
+        let environment = requestedEnvironment ?? [:]
         let namesAreValid = environment.keys.allSatisfy(DeploymentManifest.isValidEnvironmentName)
         let valuesAreValid = environment.values.allSatisfy {
             !$0.contains("\0") && !$0.contains("\n") && !$0.contains("\r")
@@ -192,7 +261,7 @@ extension DeploymentEngine {
                 message: "Environment names or values are invalid.",
             )
         }
-        return (name, environment)
+        return (normalizedName, environment)
     }
 
     private func performStart(projectId: String) async throws -> OperationResponse {

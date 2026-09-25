@@ -1,6 +1,41 @@
 import Foundation
 
 extension DeploymentEngine {
+    func ensureFreeSpace() throws {
+        let values = try git.dataRoot.resourceValues(forKeys: [.volumeAvailableCapacityKey])
+        guard let available = values.volumeAvailableCapacity else {
+            throw APIError(
+                status: .internalServerError,
+                code: "disk_space_unavailable",
+                message: "Unable to determine available disk space.",
+            )
+        }
+        guard Int64(available) >= minimumFreeSpaceBytes else {
+            throw APIError(
+                status: .serviceUnavailable,
+                code: "disk_space_low",
+                message: "Deployment stopped because free disk space is below the configured minimum.",
+            )
+        }
+    }
+
+    func pruneProjectHistory(projectId: String) async throws {
+        guard let project = await store.project(id: projectId) else {
+            return
+        }
+        let protected = Set([project.currentReleaseId, project.previousReleaseId].compactMap(\.self))
+        let removed = try await store.prune(
+            projectId: projectId,
+            keepingReleaseIds: protected,
+            releaseLimit: releaseRetentionCount,
+            deploymentLimit: deploymentRetentionCount,
+        )
+        _ = try await docker.removeImages(removed.compactMap(\.imageTag))
+        for release in removed {
+            try git.removeReleaseDirectory(release)
+        }
+    }
+
     func waitUntilHealthy(release: ReleaseRecord) async throws {
         guard let manifest = release.manifest, let healthCheck = manifest.healthCheck else {
             return

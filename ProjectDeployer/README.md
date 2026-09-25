@@ -22,7 +22,7 @@ ProjectDeployer 是面向单台轻量项目部署管理工具。它通过 Flutte
 
 ## 当前可用范围
 
-当前已经可用的是 Swift 控制服务；Flutter Web 管理台暂不实现。Swift 服务可以持久化项目配置，轮询远程 Git 分支，按路径规则构建并部署 Docker 容器，并提供启动、停止、重启、回滚和有限日志 API。安装与更新方式见 [Raspberry Pi 安装与更新](docs/installation.md)，接口调用见 [HTTP API](docs/api.md)。
+当前已经可用的是 Swift 控制服务；Flutter Web 管理台暂不实现。Swift 服务可以持久化和编辑项目配置，轮询远程 Git 分支，按路径规则构建并部署 Docker 容器，并提供启动、停止、重启、回滚、删除和有限日志 API。它还包含 SSH 凭据管理、历史清理、磁盘保护、Docker 对账与一致性备份。安装与更新方式见 [Raspberry Pi 安装与更新](docs/installation.md)，接口调用见 [HTTP API](docs/api.md)，实机结果见 [Raspberry Pi 实机验收](docs/acceptance.md)。
 
 ## 规划目录
 

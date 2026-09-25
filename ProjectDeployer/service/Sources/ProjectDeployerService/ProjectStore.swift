@@ -119,6 +119,22 @@ actor ProjectStore {
         state = updatedState
     }
 
+    func deleteProject(id: String) throws {
+        guard state.projects.contains(where: { $0.id == id }) else {
+            throw APIError(
+                status: .notFound,
+                code: "project_not_found",
+                message: "The requested project does not exist.",
+            )
+        }
+        var updatedState = state
+        updatedState.projects.removeAll { $0.id == id }
+        updatedState.releases.removeAll { $0.projectId == id }
+        updatedState.deployments.removeAll { $0.projectId == id }
+        try persist(updatedState)
+        state = updatedState
+    }
+
     func releases(projectId: String) -> [ReleaseRecord] {
         state.releases
             .filter { $0.projectId == projectId }
@@ -162,6 +178,59 @@ actor ProjectStore {
         }
         try persist(updatedState)
         state = updatedState
+    }
+
+    func failInterruptedDeployments(at date: Date) throws {
+        var updatedState = state
+        var changed = false
+        for index in updatedState.deployments.indices where updatedState.deployments[index].status == .running {
+            let deployment = updatedState.deployments[index]
+            updatedState.deployments[index] = DeploymentRecord(
+                id: deployment.id,
+                projectId: deployment.projectId,
+                releaseId: deployment.releaseId,
+                action: deployment.action,
+                status: .failed,
+                message: "ProjectDeployer restarted before this operation completed.",
+                startedAt: deployment.startedAt,
+                finishedAt: date,
+            )
+            changed = true
+        }
+        guard changed else {
+            return
+        }
+        try persist(updatedState)
+        state = updatedState
+    }
+
+    func prune(
+        projectId: String,
+        keepingReleaseIds: Set<String>,
+        releaseLimit: Int,
+        deploymentLimit: Int,
+    ) throws -> [ReleaseRecord] {
+        let projectReleases = state.releases
+            .filter { $0.projectId == projectId }
+            .sorted { $0.createdAt > $1.createdAt }
+        let retained = Set(projectReleases.prefix(releaseLimit).map(\.id)).union(keepingReleaseIds)
+        let removed = projectReleases.filter { !retained.contains($0.id) }
+
+        let retainedDeployments = Set(
+            state.deployments
+                .filter { $0.projectId == projectId }
+                .sorted { $0.startedAt > $1.startedAt }
+                .prefix(deploymentLimit)
+                .map(\.id),
+        )
+        var updatedState = state
+        updatedState.releases.removeAll { $0.projectId == projectId && !retained.contains($0.id) }
+        updatedState.deployments.removeAll {
+            $0.projectId == projectId && !retainedDeployments.contains($0.id)
+        }
+        try persist(updatedState)
+        state = updatedState
+        return removed
     }
 
     private func persist(_ updatedState: PersistedState) throws {
